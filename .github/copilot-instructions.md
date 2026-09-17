@@ -25,6 +25,25 @@ Each ecosystem implements these 7 required classes that inherit from `dependabot
 
 ## Key Patterns & Conventions
 
+### Ecosystem Families & Shared Code
+
+Ecosystems are **not** independent. Many are different tools for the **same language**, so they target the same dependencies, resolve from the same registries, and follow largely the same business logic. A bug or improvement is therefore often **general to the whole family** rather than specific to one ecosystem.
+
+Families:
+
+- **JavaScript / TypeScript** — `npm_and_yarn` (npm, Yarn, pnpm), `bun`, `deno`
+- **Python** — `python` (pip, pip-compile, pipenv, Poetry), `uv`, `conda`
+- **JVM** — `maven`, `gradle`, `sbt`
+- **Terraform / IaC** — `terraform`, `opentofu`
+- **Containers** — `docker`, `docker_compose`, `helm`
+
+When fixing a bug, first classify the root cause as **ecosystem-specific** or **general to a family** (dependency resolution, registry handling, version comparison, requirement parsing, error handling, etc.). If it is general, apply the fix — with tests — across every ecosystem in the family, not just the one where it was reported:
+
+- **Shared in code** (e.g. `gradle`/`sbt` → `maven`, `uv`/`conda` → `python`, `helm`/`docker_compose` → `docker`) — the fix reaches dependents at runtime, but still run their test suites.
+- **Duplicated logic** (e.g. `bun` ↔ `npm_and_yarn`, `opentofu` ↔ `terraform`) — fix every affected sibling; prefer consolidating the shared behavior into a common base when practical (improves stability), otherwise fix each duplicate. Don't add new duplication just to match a sibling.
+
+See [`ECOSYSTEM_FAMILIES.md`](../ECOSYSTEM_FAMILIES.md) for the full relationship map and fix-propagation workflow.
+
 ### Error Handling
 
 - Use ecosystem-specific error classes inheriting from `Dependabot::DependabotError`
